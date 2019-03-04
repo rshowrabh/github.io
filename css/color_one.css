@@ -1,0 +1,120 @@
+.color{
+    color: #c0392b;
+}
+span{
+    color: #c0392b;
+}
+#navigation nav ul li a:hover,
+#navigation nav ul li a:focus,
+#navigation nav ul li a.active {
+    color: #c0392b;
+}
+#banner .banner_text a:hover {
+    color: #fff;
+    background: #c0392b;
+    border: 1px solid #c0392b;
+    transform: scale(1.05)
+}
+h3.all_heading {
+    color: #c0392b;
+    font-size: 26px;
+    line-height: 36px;
+    font-weight: 600;
+    padding-bottom: 10px;
+    font-family: 'Roboto', sans-serif;
+}
+#about .social_link i {
+    height: 40px;
+    width: 40px;
+    line-height: 40px;
+    text-align: center;
+    color: #c0392b;
+    background: transparent;
+    border: 1px solid #c0392b;
+    border-radius: 50%;
+    transition: .3s all linear;
+    margin-right: 10px;
+}
+#about .social_link i:hover {
+    background: #c0392b;
+    color: #fff;
+    margin-right: 12px;
+    transform: scale(1.1)
+}
+#hireme a {
+    height: 60px;
+    width: 200px;
+    color: #c0392b;
+    background: transparent;
+    border: 1px solid #c0392b;
+    border-radius: 10px;
+    text-align: center;
+    display: inline-block;
+    padding-top: 15px;
+    margin-top: 40px;
+}
+#hireme a:hover {
+    color: #fff;
+    background: #c0392b;
+    border: 1px solid #c0392b;
+    transform: scale(1.05)
+}
+.slidNext3:hover,
+.slidPrv3:hover {
+    color: #000;
+    background: #c0392b;
+    border: none;
+    transition: all linear .3s;
+    -webkit-transition: all linear .3s;
+}
+#portfolio ul li a {
+    margin: 0px 10px;
+    height: 30px;
+    width: 120px;
+    display: block;
+    padding: 4px 0px;
+    color: #c0392b;
+    border-radius: 10px;
+    transition: .3s all linear
+}
+#portfolio ul li a:hover,
+#portfolio ul li a:focus,
+#portfolio ul li a.active {
+    background: #c0392b;
+    color: #fff;
+    cursor: pointer;
+}
+#blog .blog_col a {
+    margin-top: 10px;
+    background: #fff;
+    color: #c0392b;
+    border-color: #c0392b;
+    transition: .5s all linear;
+}
+#blog .blog_col a:hover {
+    color: #fff;
+    background: #c0392b;
+    border-color: #c0392b;
+    transform: scale(1.05)
+}
+#service .service_col i {
+    font-size: 40px;
+    color: #c0392b;
+}
+form .btn {
+    background: #fff;
+    color: #c0392b;
+    width: 200px;
+    height: 50px;
+    border: 1px solid #c0392b;
+    transition: .5s all linear;
+}
+form .btn:hover{
+    background: #c0392b;
+    color: #fff;
+    transform: scale(1.1);
+}
+#contact .contact_col i {
+    font-size: 30px;
+    color: #c0392b;
+}
