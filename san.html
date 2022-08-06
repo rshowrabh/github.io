@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<body style="font-size:14px">
+<pre>
+
+
+
+
+# Set Working directory (where your data is located)
+setwd("C:/Users/User/Dropbox/Major Course/Advanced Biostatistics JnU/Data and Codes")
+
+# For mac
+setwd("/Users/atiqul/Dropbox/Major Course/Advanced Biostatistics JnU/Data and Codes")
+
+#Read data
+schizo <- read.csv("0001schizophrenia.csv",sep=";")
+str(schizo)
+
+# fix(schizo)  ## Edit dataset
+
+schizo <- within(schizo, {
+   sex <- factor(Gender, labels = c("Male", "Female"))
+   marital <- factor(Marital, labels = c("Single","Married","Alone again"))
+   Time <- as.numeric(Time)
+})
+str(schizo)
+
+
+## a) 
+
+prop.table(table(schizo$Censor))
+
+table(schizo$Censor, schizo$marital)
+
+prop.table(table(schizo$Censor, schizo$marital))
+
+# Install and run the necessary packages 
+# First time install all the packages.
+
+# install.packages("survival")
+# install.packages("survminer")
+# install.packages("Deducer")
+
+
+library(survival)
+library(survminer)
+library(Deducer)
+
+# Plot the Kaplan-Meier estimated survival curve for all patients, together with the confidence interval. 
+
+schizo_surv <- survfit(Surv(Time,Censor)~1,data = schizo, type = "kaplan-meier", conf.type = "log-log")
+
+
+#  b) Median Survival time
+print(schizo_surv)
+summary(schizo_surv)
+plot(schizo_surv,xlab = "Time in days", ylab = "Survival probability")
+
+# Another way
+ggsurvplot(schizo_surv, data = schizo, pval = TRUE)
+
+
+# c) Specify the survival at 6 months, 18 months and 36 months (with 95% CIs).
+# What can you say about the median survival time?
+print(summary(schizo_surv, time=c(6*30, 18*30, 36*30)))
+
+print(schizo_surv)
+# If median is not computed: the median survival time cannot be estimated for this data
+# because the proportion of patients who experience the event is less than 50% and hence
+# the estimation is not possible. 
+
+
+# d) Plot the Kaplan-Meier estimated survival curve for marital status. 
+
+KM_schizo <- survfit(Surv(Time,Censor) ~ marital,data=schizo,type="kaplan-meier", conf.type="log-log")
+summary(KM_schizo)
+plot(KM_schizo, xlab = "Time in days", ylab = "Survival probability")
+
+# d) Another way
+ggsurvplot(KM_schizo, data = schizo, pval = TRUE)
+
+
+## Log-rank test 
+survdiff(Surv(Time,Censor) ~ marital,data=schizo)
+
+
+# Median Survival time for marital status group of patients.
+print(KM_schizo)
+
+
+## Impact of gender on survival of schizophrenia patients
+# Plot estimated survival curves and compute global test and comments on your result.
+
+semi.gender <- coxph(Surv(Time, Censor) ~ sex, data = schizo)
+summary(semi.gender)
+
+# Female Patients at any time point during the study period were 1.94 time more experiencing the event
+# than the male patients, and we are 95% confident that the true value is lying between 1.40-2.67.
+# (i.e. we are 95% sure that female patients were between 1.40 and 2.67 more experiencing the event than male patients. 
+
+
+fit1 <- survfit(Surv(Time, Censor) ~ sex, data = schizo)
+ggsurvplot(fit1, data = schizo, pval=TRUE)
+
+## Cumulative Hazard function
+
+plot(fit1, fun = "cumhaz",xlab = "Time in days", ylab = "Cumulative Hazard")
+
+# To check this assumption, we can plot the cumulative hazard functions
+# for the two groups; when PH is satisfied the two curves will be proportional
+# to each other (i.e., the steadily grow away of each other). 
+
+
+# PH assumption for gender
+ph.gender <- cox.zph(semi.gender,transform="km", terms=TRUE, singledf=FALSE, global=TRUE)
+ph.gender               # the null hypothesis is tested if the correlation between the
+                        # Schoenfeld residuals and the ranked failure time is zero. As one can see, the test is not statistically
+                        # significant for the covariate sex. Hence, we can assume the proportional hazards assumption holds.
+#plot(ph.gender)
+ggcoxzph(ph.gender)
+
+
+## Impact of marital status on survival of schizophrenia patients
+semi.marital <- coxph(Surv(Time, Censor) ~ marital, data = schizo)
+summary(semi.marital)
+anova(semi.marital)
+
+
+mar <- survfit(Surv(Time, Censor) ~ marital, data = schizo)
+ggsurvplot(mar, data = schizo, pval=TRUE)
+
+
+# Construct an appropriate semi-parametric proportional hazards model
+# for the survival of schizophrenia patients based on the information available in this database
+# and explain your final results (consider ??=0.05). 
+# Based on your final models, Check the proportional hazards assumption.
+
+names(schizo)
+
+## Impact of marital status and gender on survival of schizophrenia patients
+model3 <- coxph(Surv(Time, Censor) ~ sex+marital, data = schizo)
+summary(model3)
+ggforest(model3)
+
+
+# Check the proportional hazards assumption.
+cox.zph.fit.m3 <- cox.zph(model3)
+
+## Global test and all covariates
+cox.zph.fit.m3
+
+# plot all variables
+ggcoxzph(cox.zph.fit.m3)
+
+
+# Construct Exponential, Weibull, loglogistic and log-normal parametric proportional hazards models 
+# Which model is better use -- anova(first model, 2nd model) 
+
+## Parametric PH regression
+
+## Cox PH model
+coxphFit <- coxph(Surv(Time, Censor) ~ sex+marital, data = schizo)
+summary(coxphFit)
+
+
+## Exponential model
+survregExp <- survreg(Surv(Time, Censor) ~ sex+marital, data = schizo,
+                      dist = "exponential")
+summary(survregExp)
+
+## AFT interpretation
+## Geometric mean of survival time: 1714
+##  survival time of Females is shorten by 0.63 times than male
+
+exp(coef(survregExp))
+
+## PH interpretation (multiply by -1 before exp())
+## Risk of female (HR) increases h(t) by 1.59 times higher than male
+
+exp(-1 * coef(survregExp))
+
+
+## Weibull model
+survregWeibull <- survreg(Surv(Time, Censor) ~ sex+marital, data = schizo, dist = "weibull")
+summary(survregWeibull)
+
+## Scale parameter
+survregWeibull$scale
+
+## Shape parameter
+(shapeParameter <- 1 / survregWeibull$scale)
+
+## AFT interpretation
+## Geometric mean of survival time: 1673
+###  survival time of Females is shorten by 0.64 times than male
+## 1 unit change in ecog.ps shortens survival time by 0.68 times
+## rx extends survival time by 1.69 times
+exp(coef(survregWeibull))
+
+## PH interpretation (multiply by -1 and shape parameter before exp())
+
+## 1 unit change in ecog.ps increases h(t) by 1.55 times
+## rx decreases h(t) by 0.55 times
+exp(-1 * shapeParameter * coef(survregWeibull))
+
+
+# Which model is better?
+  
+anova(survregWeibull,survregExp)  
+
+## Both models are same, since P>0.05, so we will choose the simple model model (Exponential PH model).
+
+
+## Question-5. Grouping Age variable
+# install.packages("Deducer")
+library(Deducer)
+
+schizo[c("age_group")] <- recode.variables(schizo[c("Age")] , 
+                                         "Lo:20 -> 'Young';20:30 -> 'Adult';
+                                         else -> 'Middle aged';")
+
+# Plot the Kaplan-Meier estimated survival curve for Age group. 
+KM_age <- survfit(Surv(Time,Censor) ~ age_group,data=schizo,type="kaplan-meier", conf.type="log-log")
+summary(KM_age)
+
+# Plot and Log-rank test
+ggsurvplot(KM_age, data = schizo, pval = TRUE)
+
+## Impact of age group on survival of schizophrenia patients (Semi-parametric model)
+model4 <- coxph(Surv(Time, Censor) ~ age_group, data = schizo)
+summary(model4)
+
+# Check the proportional hazards assumption.
+ph_check <- cox.zph(model4)
+
+## Global test and all covariates
+ph_check
+
+# plot all variables
+ggcoxzph(ph_check)
+
+
+
+
+</pre>
+</body>
+</html>

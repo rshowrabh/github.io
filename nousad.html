@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<body style="font-size:14px">
+<pre>
+
+
+
+
+schizo<-read.csv("0001schizophrenia.csv",sep=";")
+str(schizo)
+schizo<-within(schizo,{
+  marital<-factor(Marital,labels=c("single","married","alon agin"))
+  sex<-factor(Gender,labels = c("male","female"))
+  Time<-as.numeric(Time)
+  })
+str(schizo)
+summary(schizo)
+#a
+nrow(schizo[schizo$Censor==0,])
+prop.table(table(schizo$Censor,schizo$marital))
+##Since for event,proportion alone again is 0.253 which is higher then single and marrital group.
+#so, we can say group of alone again is more likely to expose the event than single and married group.
+prop.table(table(schizo$Censor,schizo$sex))
+#same
+#b
+library(survival)
+library(survminer)
+km<-survfit(Surv(Time,Censor)~1,data=schizo,type="kaplan-meier",conf.type="log-log")
+summary(km)
+plot(km,xlab="time in years",ylab="probability")
+ggsurvplot(km,pval=TRUE)
+
+#c
+print(km)
+#median survival time is 933 days.if NA exist( the median survival time cannot be estimated for this data
+# because the proportion of patients who experience the event is less than 50% and hence
+# the estimation is not possible. )
+
+#we are confident that the value of survival time lies between 757 and 1099 days.
+print(summary(km,time=c(6*30,18*30,36*30)))
+
+#d
+km_marital<-survfit(Surv(Time,Censor)~marital,data=schizo,type="kaplan-meier",conf.type="log-log")
+summary(km_marital)
+plot(km_marital,xlab="time in years",ylab="probability")
+ggsurvplot(km_marital,pval=TRUE)
+#log rank test
+survdiff(Surv(Time,Censor)~marital,data=schizo)
+#here p value is 0.0001.thats mean, the effact of marital status is highly significant.
+
+#e
+km_marital.sex<-survfit(Surv(Time,Censor)~marital+sex,data=schizo,type="kaplan-meier",conf.type="log-log")
+plot(km_marital.sex,xlab="time in years",ylab="probability")
+ggsurvplot(km_marital.sex,pval=TRUE)
+
+#the combined effact of marital and sex is highly significant.
+
+#1
+km_est.1<-survfit(Surv(Time,Censor)~1,data = schizo, type="kaplan-meier", conf.type="log-log")
+print(km_est.1)
+print(summary(km_est.1, time= c(6*30, 18*30, 36*30)))
+
+#2
+km.sex<-survfit(Surv(Time,Censor)~sex,data=schizo,type="kaplan-meier",conf.type="log-log")
+plot(km.sex,xlab="time in years",ylab="probability")
+print(km.sex)
+summary(km.sex)
+ggsurvplot(km.sex,pval=T)
+
+#3
+semi.s<-coxph(Surv(Time,Censor)~sex,data=schizo)
+semi.s
+summary(semi.s)
+
+#Female Patients at any time point during the study period were 1.94 time more experiencing the event
+# than the male patients, and we are 95% confident that the true value is lying between 1.40-2.67.
+# (i.e. we are 95% sure that female patients were between 1.40 and 2.67 more experiencing the event than male patients. 
+
+anova(semi.s)
+fit1<-survfit(Surv(Time,Censor)~sex,data=schizo)
+ggsurvplot(fit1,pval=T)
+
+##cumulative hazard
+plot(fit1,fun="cumhaz",xlab="time in years",ylab="probabilty")
+#global test for ph assumtion
+ph.sex<-cox.zph(semi.s,transform = "km",terms=TRUE,singledf=FALSE,global=TRUE)
+ph.sex
+ggcoxzph(ph.sex)
+
+##4 Impact of marital status on survival of schizophrenia patients
+semi.marital <- coxph(Surv(Time, Censor) ~ marital, data = schizo)
+summary(semi.marital)
+anova(semi.marital)
+names(semi.marital)
+
+semi.marital$var
+cov_mar_alone <- semi.marital$var[1,1]+semi.marital$var[2,2]-2*semi.marital$var[1,2]
+
+mar <- survfit(Surv(Time, Censor) ~ marital, data = schizo)
+ggsurvplot(mar, data = schizo)
+# patients who are married but alone again  at any point during the study period were 2.12 time more experiencing the event
+# than the single patients, and we are 95% confident that the true value is lying between 1.54-3.18.
+# (i.e. we are 95% sure that female patients were between 1.54 and 3.18 more experiencing the event than single patients. 
+
+#ph assumtion
+ph.m<-cox.zph(semi.marital,transform = "km",terms=TRUE,singledf=FALSE,global=TRUE)
+ph.m
+ggcoxzph(ph.m)
+
+#The correlation between the schoenfeld residuals and the ranked failure time is zero.
+#we can see ,the test is not statistically significant for the covariate sex.hence ,
+#we can assume the proportinal hazards assumption holds.
+
+#5
+Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\jre7')
+library(Deducer)
+library(rJava)
+library(JavaGD)
+library(JGR)
+schizo[c("age_group")]<-recode.variables(schizo[c("Age")],"Lo:20->'Young';20:30->'Adult';else->'Middle age';")
+km_age<-survfit(Surv(Time,Censor)~age_group,data=schizo,type="kaplan-meier",conf.type="log-log")
+summary(km_age)
+ggsurvplot(km_age,data=schizo,pval=TRUE)
+# age group is insignificant effect on survival.
+
+model5<-coxph(Surv(Time,Censor)~age_group,data=schizo)
+summary(model5)
+#patients who are middle aged at any time during the study were 0.95 times less experiencing the event then the adult patient.
+ph_check<-cox.zph(model5)
+ph_check
+ggcoxzph(ph_check)
+##we can see ,the test is not statistically significant for the covariate age group hence ,we can assume the proportinal hazards assumption holds.
+
+
+#6
+names(schizo)
+model1<-coxph(Surv(Time,Censor)~sex+marital,data = schizo)
+summary(model1)
+ggforest(model1)
+#sex and marital significant
+##plot and assumption checking
+model1.zph<-cox.zph(model1)
+ggcoxzph(model1.zph)
+##we can see ,the test is not statistically significant for marital and sex. hence ,we can assume the proportinal hazards assumption holds.
+
+#7
+## Exponential model
+survregExp <- survreg(Surv(Time, Censor) ~ sex+marital, data = schizo,dist = "exponential")
+summary(survregExp)
+
+## AFT interpretation
+
+exp(coef(survregExp))
+#Geometric mean of survival time: 1714
+##  survival time of Females is shorten by 0.63 times than male
+
+## PH interpretation (multiply by -1 before exp())
+
+exp(-1 * coef(survregExp))
+
+## Risk of female (HR) increases h(t) by 1.59 times higher than male
+
+
+
+
+## Weibull model
+survregWeibull <- survreg(Surv(Time, Censor) ~ sex+marital, data = schizo, dist = "weibull")
+summary(survregWeibull)
+
+## Scale parameter
+survregWeibull$scale
+
+## Shape parameter
+(shapeParameter <- 1 / survregWeibull$scale)
+
+## AFT interpretation
+
+exp(coef(survregWeibull))
+
+## Geometric mean of survival time: 1673
+###  survival time of Females is shorten by 0.64 times than male
+## 1 unit change in ecog.ps shortens survival time by 0.68 times
+## rx extends survival time by 1.69 times
+
+## PH interpretation (multiply by -1 and shape parameter before exp())
+
+exp(-1 * shapeParameter * coef(survregWeibull))
+
+## 1 unit change in ecog.ps increases h(t) by 1.61 times
+## rx decreases h(t) by 0.55 times
+# Which model is better?
+
+anova(survregWeibull,survregExp)
+
+#both models are same ,since p>0.05 we will choose simple model.(exponential model)
+
+</pre>
+
+</body>
+</html>
