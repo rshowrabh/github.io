@@ -6,241 +6,260 @@
 <body style="font-size:14px">
 <pre>
 
-
-
-
-# Set Working directory (where your data is located)
-setwd("C:/Users/User/Dropbox/Major Course/Advanced Biostatistics JnU/Data and Codes")
-
-# For mac
-setwd("/Users/atiqul/Dropbox/Major Course/Advanced Biostatistics JnU/Data and Codes")
-
-#Read data
-schizo <- read.csv("0001schizophrenia.csv",sep=";")
-str(schizo)
-
-# fix(schizo)  ## Edit dataset
-
-schizo <- within(schizo, {
-   sex <- factor(Gender, labels = c("Male", "Female"))
-   marital <- factor(Marital, labels = c("Single","Married","Alone again"))
-   Time <- as.numeric(Time)
-})
-str(schizo)
-
-
-## a) 
-
-prop.table(table(schizo$Censor))
-
-table(schizo$Censor, schizo$marital)
-
-prop.table(table(schizo$Censor, schizo$marital))
-
-# Install and run the necessary packages 
-# First time install all the packages.
-
-# install.packages("survival")
-# install.packages("survminer")
-# install.packages("Deducer")
-
-
-library(survival)
-library(survminer)
-library(Deducer)
-
-# Plot the Kaplan-Meier estimated survival curve for all patients, together with the confidence interval. 
-
-schizo_surv <- survfit(Surv(Time,Censor)~1,data = schizo, type = "kaplan-meier", conf.type = "log-log")
-
-
-#  b) Median Survival time
-print(schizo_surv)
-summary(schizo_surv)
-plot(schizo_surv,xlab = "Time in days", ylab = "Survival probability")
-
-# Another way
-ggsurvplot(schizo_surv, data = schizo, pval = TRUE)
-
-
-# c) Specify the survival at 6 months, 18 months and 36 months (with 95% CIs).
-# What can you say about the median survival time?
-print(summary(schizo_surv, time=c(6*30, 18*30, 36*30)))
-
-print(schizo_surv)
-# If median is not computed: the median survival time cannot be estimated for this data
-# because the proportion of patients who experience the event is less than 50% and hence
-# the estimation is not possible. 
-
-
-# d) Plot the Kaplan-Meier estimated survival curve for marital status. 
-
-KM_schizo <- survfit(Surv(Time,Censor) ~ marital,data=schizo,type="kaplan-meier", conf.type="log-log")
-summary(KM_schizo)
-plot(KM_schizo, xlab = "Time in days", ylab = "Survival probability")
-
-# d) Another way
-ggsurvplot(KM_schizo, data = schizo, pval = TRUE)
-
-
-## Log-rank test 
-survdiff(Surv(Time,Censor) ~ marital,data=schizo)
-
-
-# Median Survival time for marital status group of patients.
-print(KM_schizo)
-
-
-## Impact of gender on survival of schizophrenia patients
-# Plot estimated survival curves and compute global test and comments on your result.
-
-semi.gender <- coxph(Surv(Time, Censor) ~ sex, data = schizo)
-summary(semi.gender)
-
-# Female Patients at any time point during the study period were 1.94 time more experiencing the event
-# than the male patients, and we are 95% confident that the true value is lying between 1.40-2.67.
-# (i.e. we are 95% sure that female patients were between 1.40 and 2.67 more experiencing the event than male patients. 
-
-
-fit1 <- survfit(Surv(Time, Censor) ~ sex, data = schizo)
-ggsurvplot(fit1, data = schizo, pval=TRUE)
-
-## Cumulative Hazard function
-
-plot(fit1, fun = "cumhaz",xlab = "Time in days", ylab = "Cumulative Hazard")
-
-# To check this assumption, we can plot the cumulative hazard functions
-# for the two groups; when PH is satisfied the two curves will be proportional
-# to each other (i.e., the steadily grow away of each other). 
-
-
-# PH assumption for gender
-ph.gender <- cox.zph(semi.gender,transform="km", terms=TRUE, singledf=FALSE, global=TRUE)
-ph.gender               # the null hypothesis is tested if the correlation between the
-                        # Schoenfeld residuals and the ranked failure time is zero. As one can see, the test is not statistically
-                        # significant for the covariate sex. Hence, we can assume the proportional hazards assumption holds.
-#plot(ph.gender)
-ggcoxzph(ph.gender)
-
-
-## Impact of marital status on survival of schizophrenia patients
-semi.marital <- coxph(Surv(Time, Censor) ~ marital, data = schizo)
-summary(semi.marital)
-anova(semi.marital)
-
-
-mar <- survfit(Surv(Time, Censor) ~ marital, data = schizo)
-ggsurvplot(mar, data = schizo, pval=TRUE)
-
-
-# Construct an appropriate semi-parametric proportional hazards model
-# for the survival of schizophrenia patients based on the information available in this database
-# and explain your final results (consider ??=0.05). 
-# Based on your final models, Check the proportional hazards assumption.
-
-names(schizo)
-
-## Impact of marital status and gender on survival of schizophrenia patients
-model3 <- coxph(Surv(Time, Censor) ~ sex+marital, data = schizo)
-summary(model3)
-ggforest(model3)
-
-
-# Check the proportional hazards assumption.
-cox.zph.fit.m3 <- cox.zph(model3)
-
-## Global test and all covariates
-cox.zph.fit.m3
-
-# plot all variables
-ggcoxzph(cox.zph.fit.m3)
-
-
-# Construct Exponential, Weibull, loglogistic and log-normal parametric proportional hazards models 
-# Which model is better use -- anova(first model, 2nd model) 
-
-## Parametric PH regression
-
-## Cox PH model
-coxphFit <- coxph(Surv(Time, Censor) ~ sex+marital, data = schizo)
-summary(coxphFit)
-
-
-## Exponential model
-survregExp <- survreg(Surv(Time, Censor) ~ sex+marital, data = schizo,
-                      dist = "exponential")
-summary(survregExp)
-
-## AFT interpretation
-## Geometric mean of survival time: 1714
-##  survival time of Females is shorten by 0.63 times than male
-
-exp(coef(survregExp))
-
-## PH interpretation (multiply by -1 before exp())
-## Risk of female (HR) increases h(t) by 1.59 times higher than male
-
-exp(-1 * coef(survregExp))
-
-
-## Weibull model
-survregWeibull <- survreg(Surv(Time, Censor) ~ sex+marital, data = schizo, dist = "weibull")
-summary(survregWeibull)
-
-## Scale parameter
-survregWeibull$scale
-
-## Shape parameter
-(shapeParameter <- 1 / survregWeibull$scale)
-
-## AFT interpretation
-## Geometric mean of survival time: 1673
-###  survival time of Females is shorten by 0.64 times than male
-## 1 unit change in ecog.ps shortens survival time by 0.68 times
-## rx extends survival time by 1.69 times
-exp(coef(survregWeibull))
-
-## PH interpretation (multiply by -1 and shape parameter before exp())
-
-## 1 unit change in ecog.ps increases h(t) by 1.55 times
-## rx decreases h(t) by 0.55 times
-exp(-1 * shapeParameter * coef(survregWeibull))
-
-
-# Which model is better?
-  
-anova(survregWeibull,survregExp)  
-
-## Both models are same, since P>0.05, so we will choose the simple model model (Exponential PH model).
-
-
-## Question-5. Grouping Age variable
-# install.packages("Deducer")
-library(Deducer)
-
-schizo[c("age_group")] <- recode.variables(schizo[c("Age")] , 
-                                         "Lo:20 -> 'Young';20:30 -> 'Adult';
-                                         else -> 'Middle aged';")
-
-# Plot the Kaplan-Meier estimated survival curve for Age group. 
-KM_age <- survfit(Surv(Time,Censor) ~ age_group,data=schizo,type="kaplan-meier", conf.type="log-log")
-summary(KM_age)
-
-# Plot and Log-rank test
-ggsurvplot(KM_age, data = schizo, pval = TRUE)
-
-## Impact of age group on survival of schizophrenia patients (Semi-parametric model)
-model4 <- coxph(Surv(Time, Censor) ~ age_group, data = schizo)
-summary(model4)
-
-# Check the proportional hazards assumption.
-ph_check <- cox.zph(model4)
-
-## Global test and all covariates
-ph_check
-
-# plot all variables
-ggcoxzph(ph_check)
+set.seed(1234)
+#a
+# Write an R-code, how to get IRIS data from R environment? 
+#   Find the structure of the dataset, number of observations,
+# dimensions, name of the variables, first 6 rows, first 25 rows,
+# last 6 rows and summary of IRIS data using R code.
+iris_data<-iris
+str(iris_data)
+nrow(iris_data)
+dim(iris_data)
+head(iris_data)
+iris_data[1:25,]
+tail(iris_data)
+
+#b
+# Draw a random sample of size 25 from the IRIS dataset and display the dataset.
+idx<-sample(nrow(iris_data),25)
+idx
+iris_data[idx,]
+
+#c
+# Draw a histogram, density plot from Sepal.Length
+# and pie chart and bar chart from Species using R code.
+hist(iris_data$Sepal.Length)
+plot(density(iris_data$Sepal.Length))
+
+pie(table(iris_data$Species))
+barplot(table(iris_data$Species))
+
+#d
+# For checking the distributions of independent variables find the covariance
+# and correlation among the independent variables of IRIS data using R code.
+ind_iris<-iris_data[-5]
+cov(ind_iris)
+cor(ind_iris)
+
+#e
+# To check the outlier of IRIS dataset draw a box-and-whisker plot using
+# R code where X-axis represents
+# Species of IRIS data and Y-axis represents the Length/Width of IRIS data.
+boxplot(Sepal.Length ~ Species, data=iris, xlab="Species", ylab="Sepal.Length")
+boxplot(Sepal.Width ~ Species, data=iris, xlab="Species", ylab="Sepal.Width")
+
+#f
+# Draw a scatter plot using with, plot, jitter, smoothScatter,
+# pairs, scatterplot3d and plot3d function from IRIS data using R code.
+with(iris, plot(Sepal.Length, Sepal.Width, col=Species, pch=as.numeric(Species)))
+with(iris,plot(Sepal.Length, Sepal.Width,col=Species,pch=as.numeric(Species)))
+plot(iris$Sepal.Length, iris$Sepal.Width, col=iris$Species, pch=as.numeric(iris$Species))
+plot(jitter(iris$Sepal.Length), jitter(iris$Sepal.Width),col=iris$Species,pch=as.numeric(iris$Species))
+smoothScatter(iris$Sepal.Length, iris$Sepal.Width, col=iris$Species, pch=as.numeric(iris$Species))
+pairs(iris, col=iris$Species, pch=as.numeric(iris$Species))
+library(scatterplot3d)
+scatterplot3d(iris$Petal.Width, iris$Sepal.Length, iris$Sepal.Width)
+library(rgl)
+plot3d(iris$Petal.Width, iris$Sepal.Length, iris$Sepal.Width)
+
+#g
+# Draw a heat map, level plot, contour plots,
+# 3D surface plot and ggplot2 for IRIS data using R code.
+heatmap(as.matrix(dist(ind_iris)))
+library(lattice)
+levelplot(Petal.Width~Sepal.Length*Sepal.Width,data = iris,cuts = 9,col.regions = grey.colors(10)[10:1])
+
+filled.contour(volcano,color=terrain.colors, asp=1,plot.axes = contour(volcano, add = T))
+persp(volcano, theta=25, phi=30, expand=0.5, col="lightblue")
+library(ggplot2)
+qplot(Sepal.Length, Sepal.Width, data=iris, facets=Species ~.)
+library(MASS)
+parcoord(iris[1:4], col=iris$Species)
+library(lattice)
+parallelplot(~iris[1:4] | Species, data=iris)
+
+#h
+# Using IRIS data build a decision tree with party package
+# and makes prediction for
+# new data using R code. Whereas data split as training 75% and test 25%.
+library(party)
+str(iris)
+set.seed(1234)
+ind<-sample(2,nrow(iris),prob = c(0.75,0.25),replace = T)
+traindata<-iris[ind==1,]
+testdata<-iris[ind==2,]
+myFormula<-Species~Sepal.Length+Sepal.Width+Petal.Width+Petal.Length
+iris_ctree<-ctree(myFormula,data = traindata)
+table(predict(iris_ctree),traindata$Species)
+print(iris_ctree)
+plot(iris_ctree)
+plot(iris_ctree,type="simple")
+testPred<-predict(iris_ctree,newdata=testdata)
+table(testPred,testdata$Species)
+
+#i
+# Write an R-code, how to get bodyfat data from R environment?
+#   Find the structure of the dataset, number of observations, 
+# dimensions, name of the variables, first 6 rows,
+# first 25 rows, last 6 rows and summary of bodyfat data using R code.
+data("bodyfat", package = "TH.data")
+bodyfat_data<-bodyfat
+str(bodyfat_data)
+nrow(bodyfat_data)
+dim(bodyfat_data)
+head(bodyfat_data)
+bodyfat_data[1:25,]
+tail(bodyfat_data)
+
+
+#j
+# Build a decision tree and predict the new data for bodyfat data 
+# using rpart package whereas data split as training 72% and test 28%.
+library(rpart)
+names(bodyfat_data)
+set.seed(1234)
+ind<-sample(2,nrow(bodyfat_data),prob = c(0.78,0.22),replace = T)
+traindata<-bodyfat_data[ind==1,]
+testdata<-bodyfat_data[ind==2,]
+myFormula2<-DEXfat ~ age + waistcirc + hipcirc + elbowbreadth + kneebreadth
+bodyfat_rpart<-rpart(myFormula2,data = traindata,control = rpart.control(minsplit = 10))
+print(bodyfat_rpart)
+plot(bodyfat_rpart)
+text(bodyfat_rpart,use.n = T)
+predict(bodyfat_rpart,newdata = testdata)
+testdata$DEXfat
+
+#k
+# Using random forests build a model and predict the 
+# new data for IRIS dataset using R code,
+# whereas data split as training (70%) and test (30%).
+str(iris)
+set.seed(1234)
+ind<-sample(2,nrow(iris),prob = c(0.70,0.30),replace = T)
+traindata<-iris[ind==1,]
+testdata<-iris[ind==2,]
+library(randomForest)
+iris_rm<-randomForest(Species~.,data = traindata,ntree=100, proximity=T)
+table(predict(iris_rm),traindata$Species)
+plot(iris_rm)
+table(predict(iris_rm,newdata = testdata),testdata$Species)
+plot(margin(iris_rm,testdata$Species))
+
+#l
+# For bodyfat dataset fit generalized linear model using R code.
+names(bodyfat_data)
+bodyfat_glm<-glm(DEXfat~age+waistcirc+hipcirc+elbowbreadth+kneebreadth, data = bodyfat_data,family = gaussian("log"))
+summary(bodyfat_glm)
+
+#m
+# Using IRIS dataset fit the k-means cluster whereas cluster number
+# equals to 3 and compared with the class label
+# (Species) to check whether similar objects are grouped together or not ?
+names(iris)
+iris2<-iris[-5]
+(kmean.result<-kmeans(iris2,3))
+table(iris$Species,kmean.result$cluster)
+
+#n
+# Using IRIS dataset fit the k-medoids clustering with the number of 
+# clusters estimated by optimum average silhouette width using R code.
+library(fpc)
+pmk.result<-pamk(iris2)
+pmk.result$nc
+table(pmk.result$pamobject$clustering,iris$Species)
+plot(pmk.result$pamobject)
+
+#o
+# Draw a dendrogram for IRIS dataset using R code.
+idx <- sample(nrow(iris), 40)
+irisSample <- iris[idx,]
+irisSample$Species <- NULL
+hc <- hclust(dist(irisSample), method="ave")
+plot(hc, hang = -1, labels=iris$Species[idx])
+
+idx<-sample(nrow(iris),40)
+irisSample<-iris[idx,]
+irisSample$Species<-NULL
+hc<-hclust(dist(irisSample), method = "ave")
+plot(hc,hang=-1,labels = iris$Species[idx])
+
+#p
+# For IRIS dataset do the density-based clustering (DBSCAN) using R code.
+library(fpc)
+iris2 <- iris[-5] # remove class tags
+ds <- dbscan(iris2, eps=0.42, MinPts=5)
+table(ds$cluster, iris$Species)
+plot(ds,iris2)
+plotcluster(iris2, ds$cluster)
+
+#q
+# For IRIS dataset find
+# the outliers by Local Outlier Factor (LOF) techniques using R code.
+library(DMwR2)
+iris2<-iris[-5]
+outlier.score<-lofactor(iris2,5)
+plot(density(outlier.score))
+
+out.sc<-order(outlier.score,decreasing = T)[1:5]
+out.sc
+iris2[out.sc,]
+
+#r
+# For IRIS dataset find the outliers by clustering using R code.
+str(iris2)
+kmeans.result<-kmeans(iris2, centers = 3)
+kmean.result
+kmean.result$cluster
+centers<-kmeans.result$centers[kmeans.result$cluster,]
+distance<-sqrt(rowSums(iris2-centers)^2)
+outliners<-order(distance, decreasing = T)[1:5]
+outliners
+iris2[outliners,]
+
+#s
+# Write an R-code, how to get Titanic dataset from R environment?
+#   Find the structure of the dataset, number of observations, dimensions, name of the variables, first 6 rows,
+# first 25 rows, last 6 rows and summary of Titanic data using R code.
+str(Titanic)
+df<-as.data.frame(Titanic)
+head(df)
+titanic.raw <- NULL
+for(i in 1:4) {
+   titanic.raw <- cbind(titanic.raw, rep(as.character(df[,i]), df$Freq))
+   }
+titanic.raw <- as.data.frame(titanic.raw)
+colnames(titanic.raw)<-names(df)[-5]
+str(titanic.raw)
+nrow(titanic.raw)
+dim(titanic.raw)
+head(titanic.raw)
+titanic.raw[1:25,]
+tail(titanic.raw)
+
+
+#t
+# For Titanic dataset finds frequent itemsets with equivalence classes,
+# depth-first search and set intersection instead of counting, whereas sup = 0.1, conf =0.8 and maxlen =10.
+# [sup = support, conf = confidence and maxlen = maximum length of rules]
+library(arules)
+rules.all<-apriori(titanic.raw)
+quality(rules.all)<-round(quality(rules.all),3)
+inspect(rules.all)
+library(arulesViz)
+
+#u
+# To visualize association rules draw scatter plot, balloon plot, 
+# graph and parallel coordinates for Titanic dataset using R code.
+plot(rules.all) #scatter plot
+
+#balon plot
+plot(rules.all, method="grouped")  
+library(ggpubr)
+ggballoonplot(quality(rules.all))
+
+plot(rules.all, method="graph")  #graph plot
+plot(rules.all, method="paracoord", control=list(reorder=TRUE)) #parallal cordinates
 
 
 
