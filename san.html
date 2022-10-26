@@ -6,6 +6,172 @@
 <body style="font-size:14px">
 <pre>
 
+###1###
+set.seed(1234)
+##GAMMA
+f_rgamma<-function(size,shape, scale){
+  x<-rep(0,size)
+  for(i in 1:size){
+    x[i]<-(-scale)*sum(log(runif(shape)))
+  }
+  x
+}
+y<-f_rgamma(1000,3,2)
+mean(y)
+var(y)
+hist(y, breaks = 25, probability = TRUE)
+z<-seq(0,25,length=10000)
+dz<-dgamma(z,3,1/2)
+lines(z,dz,type="l",col= "red")
+
+##bionomial
+f_binom<-function(s,n,p){
+  X<-rep(0,s)
+  x<-0:n
+  Fx<-pbinom(x,n,p)
+  for(i in 1:s){
+    counter<-1
+    U<-runif(1,0,1)
+    while(U>Fx[counter])
+      counter<-counter+1
+    X[i]<-x[counter]
+  }
+  X
+}
+
+y<-f_binom(1000,5,.3)
+mean(y)
+var(y)
+hist(y, breaks = 10, probability = TRUE)
+z<-seq(0,25,length=10000)
+dz<-dbinom(z,5,.3)
+lines(z,dz,type="l",col= "red")
+
+##normal
+n<-5000
+U1<-runif(n)
+U2<-runif(n)
+X<-sqrt(-2*log(U1))*cos(2*pi*U2)
+Y<-sqrt(-2*log(U1))*sin(2*pi*U2)
+library(MASS)
+truehist(X)
+lines(density(X))
+truehist(Y)
+lines(density(Y))
+
+##beta
+bet<-function(n,a,b){
+  X<-rep(0,n)
+  for(i in 1:n){
+    Y<- sum(log(runif(a)))
+    Z<- sum(log(runif(b)))
+    X[i] <- Y/(Y + Z)
+  }
+  X
+}
+b <- bet(10000, 4, 2)
+library(MASS)
+truehist(b , col = "purple" , main = "Beta Histogram")
+lines(density(b),col="red")
+
+###exponen
+xpon<-function(lambda , n){
+  U<-runif(1)
+  x<- -(1/lambda) * log(1-U)
+  x
+}
+library(MASS)
+x<- expon(0.5 , 10000)
+truehist(x)
+y <- seq(0 , 8 , length = 10000)
+dy <- dexp(y , 0.5)
+lines(y , dy)
+
+#### 2##
+x<-c(19,32,28,13,8,12,16,20,14,17,22,18,23)
+mean(x)
+var(x)
+sdraw<-matrix(rpois(5000*13,18:69),nrow=13)
+ncol(sdraw)
+ncol(sdraw)
+ssq<-apply(sdraw,2,var)
+length(ssq)
+truehist(sdraw)
+hist(sdraw, breaks = 100)
+mean<-(sdraw>18.61)
+range<-(sdraw>43.25)
+mean
+range(sdraw)
+mean(sdraw>35)
+poisson.test(sum(sdraw))
+
+
+### 3 mle & moment ##
+##gamma mle
+library(stats)
+sampleData <- rgamma(n = 1000,shape = 2, rate =0.2)
+x_bar  <- mean(sampleData) # alpha/lambda is the mean
+x_bar
+lnSample <- log(sampleData)
+head(lnSample)
+meanlnSample <- mean(lnSample)
+meanlnSample
+f <- function(x){
+   log(x) - digamma(x) - log(x_bar) + meanlnSample
+}
+a <- uniroot(f,lower = 2.0, upper = 2.2)
+a
+alpha_hat <- a$root
+alpha_hat
+lambda_hat <- alpha_hat/x_bar
+lambda_hat
+
+####  Plot risk function
+# Normal Case
+n <- 5
+b <- c(1 , (n - 1)/n , (n - 1)/(n + 1))
+s <- seq(1 , 10 , 0.1)
+risk <- function(b){
+  return(((2*b^2/(n-1))+(b[1]-1)^2)*(s)^2)
+}
+risk.original <- risk(b[1])
+risk.mle <- risk(b[2])
+risk.bayes <- risk(b[3])
+plot(s , risk.original, type = "l")
+lines(s , risk.mle , lty = 2 , col = 'blue')
+lines(s , risk.bayes , lty = 3 , col = 'green')
+#bernoili case
+p<- seq(0, 1 , 0.01)
+n<- c(4, 100, 1000, 4000)
+l<- length(n)
+for(i in 1:l){
+  rm<- p*(1-p)/n[i]
+  a<-sqrt(n[i]/4)
+  rb<-(n[i]*p*(1-p)+ a^2*(1-p)^2)/(a+n[i])^2
+
+}
+plot(p,rm, type="l")
+plot(p, rb, lty=2, col="red")
+
+####  power function
+#normal
+set.seed(10)
+x<-rnorm(25,5,2)
+n<-length(x)
+xbar<-mean(x)
+sigma<-2
+mu<-5
+alpha<-.05
+zcal<-(xbar-mu)/(sigma/sqrt(n))
+zalpha<-qnorm(alpha, lower.tail = FALSE)
+zcal
+zalpha
+theta<-seq(mu-4*sigma/sqrt(n), mu+4*sigma/sqrt(n), .001)
+z<-zalpha+(mu-theta)*(sqrt(n)/sigma)
+power<-pnorm(z, lower.tail = FALSE)
+plot(theta, power, type="l")
+segments(5,0.5, 1, lty=2)
+
 #normal ci for pop var
 x<-rnorm(100,0,1)
 mean(x)
@@ -22,7 +188,7 @@ cbind(low.ci,up.ci)
 m
 # for mean classic
 low.ci<-m-qnorm(0.975)*sd(x)/sqrt(n)
- up.ci<-m+qnorm(0.975)*sd(x)/sqrt(n)
+up.ci<-m+qnorm(0.975)*sd(x)/sqrt(n)
 cbind(low.ci,up.ci)
 m
 
@@ -35,6 +201,13 @@ low.ci<-m*(1-(qnorm(1-(.05/2)))/sqrt(n))
 up.ci<-m*(1+(qnorm(1-(.05/2)))/sqrt(n))
 cbind(low.ci, up.ci)
 m
+
+
+
+
+
+
+
 
 
 
