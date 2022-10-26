@@ -6,261 +6,35 @@
 <body style="font-size:14px">
 <pre>
 
-set.seed(1234)
-#a
-# Write an R-code, how to get IRIS data from R environment? 
-#   Find the structure of the dataset, number of observations,
-# dimensions, name of the variables, first 6 rows, first 25 rows,
-# last 6 rows and summary of IRIS data using R code.
-iris_data<-iris
-str(iris_data)
-nrow(iris_data)
-dim(iris_data)
-head(iris_data)
-iris_data[1:25,]
-tail(iris_data)
+#normal ci for pop var
+x<-rnorm(100,0,1)
+mean(x)
+v<-var(x)
+n<-length(x)
+ci<-(n-1)*v/qchisq(c(.975,.025), n-1)
+ci
+v
+#bayseian normal mean
+m<-mean(x)
+low.ci<-m-qnorm(0.975)*m/sqrt(n)
+up.ci<-m+qnorm(0.975)*m/sqrt(n)
+cbind(low.ci,up.ci)
+m
+# for mean classic
+low.ci<-m-qnorm(0.975)*sd(x)/sqrt(n)
+ up.ci<-m+qnorm(0.975)*sd(x)/sqrt(n)
+cbind(low.ci,up.ci)
+m
 
-#b
-# Draw a random sample of size 25 from the IRIS dataset and display the dataset.
-idx<-sample(nrow(iris_data),25)
-idx
-iris_data[idx,]
+######exponen ci
+x = rexp(50, .5)
+n<-length(x)
+m<-1/mean(x)
 
-#c
-# Draw a histogram, density plot from Sepal.Length
-# and pie chart and bar chart from Species using R code.
-hist(iris_data$Sepal.Length)
-plot(density(iris_data$Sepal.Length))
-
-pie(table(iris_data$Species))
-barplot(table(iris_data$Species))
-
-#d
-# For checking the distributions of independent variables find the covariance
-# and correlation among the independent variables of IRIS data using R code.
-ind_iris<-iris_data[-5]
-cov(ind_iris)
-cor(ind_iris)
-
-#e
-# To check the outlier of IRIS dataset draw a box-and-whisker plot using
-# R code where X-axis represents
-# Species of IRIS data and Y-axis represents the Length/Width of IRIS data.
-boxplot(Sepal.Length ~ Species, data=iris, xlab="Species", ylab="Sepal.Length")
-boxplot(Sepal.Width ~ Species, data=iris, xlab="Species", ylab="Sepal.Width")
-
-#f
-# Draw a scatter plot using with, plot, jitter, smoothScatter,
-# pairs, scatterplot3d and plot3d function from IRIS data using R code.
-with(iris, plot(Sepal.Length, Sepal.Width, col=Species, pch=as.numeric(Species)))
-with(iris,plot(Sepal.Length, Sepal.Width,col=Species,pch=as.numeric(Species)))
-plot(iris$Sepal.Length, iris$Sepal.Width, col=iris$Species, pch=as.numeric(iris$Species))
-plot(jitter(iris$Sepal.Length), jitter(iris$Sepal.Width),col=iris$Species,pch=as.numeric(iris$Species))
-smoothScatter(iris$Sepal.Length, iris$Sepal.Width, col=iris$Species, pch=as.numeric(iris$Species))
-pairs(iris, col=iris$Species, pch=as.numeric(iris$Species))
-library(scatterplot3d)
-scatterplot3d(iris$Petal.Width, iris$Sepal.Length, iris$Sepal.Width)
-library(rgl)
-plot3d(iris$Petal.Width, iris$Sepal.Length, iris$Sepal.Width)
-
-#g
-# Draw a heat map, level plot, contour plots,
-# 3D surface plot and ggplot2 for IRIS data using R code.
-heatmap(as.matrix(dist(ind_iris)))
-library(lattice)
-levelplot(Petal.Width~Sepal.Length*Sepal.Width,data = iris,cuts = 9,col.regions = grey.colors(10)[10:1])
-
-filled.contour(volcano,color=terrain.colors, asp=1,plot.axes = contour(volcano, add = T))
-persp(volcano, theta=25, phi=30, expand=0.5, col="lightblue")
-library(ggplot2)
-qplot(Sepal.Length, Sepal.Width, data=iris, facets=Species ~.)
-library(MASS)
-parcoord(iris[1:4], col=iris$Species)
-library(lattice)
-parallelplot(~iris[1:4] | Species, data=iris)
-
-#h
-# Using IRIS data build a decision tree with party package
-# and makes prediction for
-# new data using R code. Whereas data split as training 75% and test 25%.
-library(party)
-str(iris)
-set.seed(1234)
-ind<-sample(2,nrow(iris),prob = c(0.75,0.25),replace = T)
-traindata<-iris[ind==1,]
-testdata<-iris[ind==2,]
-myFormula<-Species~Sepal.Length+Sepal.Width+Petal.Width+Petal.Length
-iris_ctree<-ctree(myFormula,data = traindata)
-table(predict(iris_ctree),traindata$Species)
-print(iris_ctree)
-plot(iris_ctree)
-plot(iris_ctree,type="simple")
-testPred<-predict(iris_ctree,newdata=testdata)
-table(testPred,testdata$Species)
-
-#i
-# Write an R-code, how to get bodyfat data from R environment?
-#   Find the structure of the dataset, number of observations, 
-# dimensions, name of the variables, first 6 rows,
-# first 25 rows, last 6 rows and summary of bodyfat data using R code.
-data("bodyfat", package = "TH.data")
-bodyfat_data<-bodyfat
-str(bodyfat_data)
-nrow(bodyfat_data)
-dim(bodyfat_data)
-head(bodyfat_data)
-bodyfat_data[1:25,]
-tail(bodyfat_data)
-
-
-#j
-# Build a decision tree and predict the new data for bodyfat data 
-# using rpart package whereas data split as training 72% and test 28%.
-library(rpart)
-names(bodyfat_data)
-set.seed(1234)
-ind<-sample(2,nrow(bodyfat_data),prob = c(0.78,0.22),replace = T)
-traindata<-bodyfat_data[ind==1,]
-testdata<-bodyfat_data[ind==2,]
-myFormula2<-DEXfat ~ age + waistcirc + hipcirc + elbowbreadth + kneebreadth
-bodyfat_rpart<-rpart(myFormula2,data = traindata,control = rpart.control(minsplit = 10))
-print(bodyfat_rpart)
-plot(bodyfat_rpart)
-text(bodyfat_rpart,use.n = T)
-predict(bodyfat_rpart,newdata = testdata)
-testdata$DEXfat
-
-#k
-# Using random forests build a model and predict the 
-# new data for IRIS dataset using R code,
-# whereas data split as training (70%) and test (30%).
-str(iris)
-set.seed(1234)
-ind<-sample(2,nrow(iris),prob = c(0.70,0.30),replace = T)
-traindata<-iris[ind==1,]
-testdata<-iris[ind==2,]
-library(randomForest)
-iris_rm<-randomForest(Species~.,data = traindata,ntree=100, proximity=T)
-table(predict(iris_rm),traindata$Species)
-plot(iris_rm)
-table(predict(iris_rm,newdata = testdata),testdata$Species)
-plot(margin(iris_rm,testdata$Species))
-
-#l
-# For bodyfat dataset fit generalized linear model using R code.
-names(bodyfat_data)
-bodyfat_glm<-glm(DEXfat~age+waistcirc+hipcirc+elbowbreadth+kneebreadth, data = bodyfat_data,family = gaussian("log"))
-summary(bodyfat_glm)
-
-#m
-# Using IRIS dataset fit the k-means cluster whereas cluster number
-# equals to 3 and compared with the class label
-# (Species) to check whether similar objects are grouped together or not ?
-names(iris)
-iris2<-iris[-5]
-(kmean.result<-kmeans(iris2,3))
-table(iris$Species,kmean.result$cluster)
-
-#n
-# Using IRIS dataset fit the k-medoids clustering with the number of 
-# clusters estimated by optimum average silhouette width using R code.
-library(fpc)
-pmk.result<-pamk(iris2)
-pmk.result$nc
-table(pmk.result$pamobject$clustering,iris$Species)
-plot(pmk.result$pamobject)
-
-#o
-# Draw a dendrogram for IRIS dataset using R code.
-idx <- sample(nrow(iris), 40)
-irisSample <- iris[idx,]
-irisSample$Species <- NULL
-hc <- hclust(dist(irisSample), method="ave")
-plot(hc, hang = -1, labels=iris$Species[idx])
-
-idx<-sample(nrow(iris),40)
-irisSample<-iris[idx,]
-irisSample$Species<-NULL
-hc<-hclust(dist(irisSample), method = "ave")
-plot(hc,hang=-1,labels = iris$Species[idx])
-
-#p
-# For IRIS dataset do the density-based clustering (DBSCAN) using R code.
-library(fpc)
-iris2 <- iris[-5] # remove class tags
-ds <- dbscan(iris2, eps=0.42, MinPts=5)
-table(ds$cluster, iris$Species)
-plot(ds,iris2)
-plotcluster(iris2, ds$cluster)
-
-#q
-# For IRIS dataset find
-# the outliers by Local Outlier Factor (LOF) techniques using R code.
-library(DMwR2)
-iris2<-iris[-5]
-outlier.score<-lofactor(iris2,5)
-plot(density(outlier.score))
-
-out.sc<-order(outlier.score,decreasing = T)[1:5]
-out.sc
-iris2[out.sc,]
-
-#r
-# For IRIS dataset find the outliers by clustering using R code.
-str(iris2)
-kmeans.result<-kmeans(iris2, centers = 3)
-kmean.result
-kmean.result$cluster
-centers<-kmeans.result$centers[kmeans.result$cluster,]
-distance<-sqrt(rowSums(iris2-centers)^2)
-outliners<-order(distance, decreasing = T)[1:5]
-outliners
-iris2[outliners,]
-
-#s
-# Write an R-code, how to get Titanic dataset from R environment?
-#   Find the structure of the dataset, number of observations, dimensions, name of the variables, first 6 rows,
-# first 25 rows, last 6 rows and summary of Titanic data using R code.
-str(Titanic)
-df<-as.data.frame(Titanic)
-head(df)
-titanic.raw <- NULL
-for(i in 1:4) {
-   titanic.raw <- cbind(titanic.raw, rep(as.character(df[,i]), df$Freq))
-   }
-titanic.raw <- as.data.frame(titanic.raw)
-colnames(titanic.raw)<-names(df)[-5]
-str(titanic.raw)
-nrow(titanic.raw)
-dim(titanic.raw)
-head(titanic.raw)
-titanic.raw[1:25,]
-tail(titanic.raw)
-
-
-#t
-# For Titanic dataset finds frequent itemsets with equivalence classes,
-# depth-first search and set intersection instead of counting, whereas sup = 0.1, conf =0.8 and maxlen =10.
-# [sup = support, conf = confidence and maxlen = maximum length of rules]
-library(arules)
-rules.all<-apriori(titanic.raw)
-quality(rules.all)<-round(quality(rules.all),3)
-inspect(rules.all)
-library(arulesViz)
-
-#u
-# To visualize association rules draw scatter plot, balloon plot, 
-# graph and parallel coordinates for Titanic dataset using R code.
-plot(rules.all) #scatter plot
-
-#balon plot
-plot(rules.all, method="grouped")  
-library(ggpubr)
-ggballoonplot(quality(rules.all))
-
-plot(rules.all, method="graph")  #graph plot
-plot(rules.all, method="paracoord", control=list(reorder=TRUE)) #parallal cordinates
-
+low.ci<-m*(1-(qnorm(1-(.05/2)))/sqrt(n))
+up.ci<-m*(1+(qnorm(1-(.05/2)))/sqrt(n))
+cbind(low.ci, up.ci)
+m
 
 
 
