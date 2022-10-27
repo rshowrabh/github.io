@@ -76,12 +76,15 @@ lines(density(b),col="red")
 
 ###exponen
 xpon<-function(lambda , n){
-  U<-runif(1)
-  x<- -(1/lambda) * log(1-U)
-  x
+  X<-rep(0,n)
+  for(i in 1:n){
+    U<-runif(1)
+    X[i] <- (-1/lambda)*log(1-U)
+  }
+  X
 }
 library(MASS)
-x<- expon(0.5 , 10000)
+x<- xpon(0.5 , 10000)
 truehist(x)
 y <- seq(0 , 8 , length = 10000)
 dy <- dexp(y , 0.5)
@@ -93,7 +96,7 @@ mean(x)
 var(x)
 sdraw<-matrix(rpois(5000*13,18:69),nrow=13)
 ncol(sdraw)
-ncol(sdraw)
+nrow(sdraw)
 ssq<-apply(sdraw,2,var)
 length(ssq)
 truehist(sdraw)
@@ -169,7 +172,7 @@ zalpha
 theta<-seq(mu-4*sigma/sqrt(n), mu+4*sigma/sqrt(n), .001)
 z<-zalpha+(mu-theta)*(sqrt(n)/sigma)
 power<-pnorm(z, lower.tail = FALSE)
-plot(theta, power, type="l")
+plot(theta, power)
 segments(5,0.5, 1, lty=2)
 
 #normal ci for pop var
@@ -194,13 +197,18 @@ m
 
 ######exponen ci
 x = rexp(50, .5)
+mean(x)
 n<-length(x)
 m<-1/mean(x)
-
+m
 low.ci<-m*(1-(qnorm(1-(.05/2)))/sqrt(n))
 up.ci<-m*(1+(qnorm(1-(.05/2)))/sqrt(n))
 cbind(low.ci, up.ci)
 m
+
+
+
+
 
 
 
