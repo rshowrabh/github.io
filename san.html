@@ -5,220 +5,493 @@
 </head>
 <body style="font-size:14px">
 <pre>
-
-###1###
-set.seed(1234)
-##GAMMA
-f_rgamma<-function(size,shape, scale){
-  x<-rep(0,size)
-  for(i in 1:size){
-    x[i]<-(-scale)*sum(log(runif(shape)))
-  }
-  x
-}
-y<-f_rgamma(1000,3,2)
-mean(y)
-var(y)
-hist(y, breaks = 25, probability = TRUE)
-z<-seq(0,25,length=10000)
-dz<-dgamma(z,3,1/2)
-lines(z,dz,type="l",col= "red")
-
-##bionomial
-f_binom<-function(s,n,p){
-  X<-rep(0,s)
-  x<-0:n
-  Fx<-pbinom(x,n,p)
-  for(i in 1:s){
-    counter<-1
-    U<-runif(1,0,1)
-    while(U>Fx[counter])
-      counter<-counter+1
-    X[i]<-x[counter]
-  }
-  X
-}
-
-y<-f_binom(1000,5,.3)
-mean(y)
-var(y)
-hist(y, breaks = 10, probability = TRUE)
-z<-seq(0,25,length=10000)
-dz<-dbinom(z,5,.3)
-lines(z,dz,type="l",col= "red")
-
-##normal
-n<-5000
-U1<-runif(n)
-U2<-runif(n)
-X<-sqrt(-2*log(U1))*cos(2*pi*U2)
-Y<-sqrt(-2*log(U1))*sin(2*pi*U2)
-library(MASS)
-truehist(X)
-lines(density(X))
-truehist(Y)
-lines(density(Y))
-
-##beta
-bet<-function(n,a,b){
-  X<-rep(0,n)
-  for(i in 1:n){
-    Y<- sum(log(runif(a)))
-    Z<- sum(log(runif(b)))
-    X[i] <- Y/(Y + Z)
-  }
-  X
-}
-b <- bet(10000, 4, 2)
-library(MASS)
-truehist(b , col = "purple" , main = "Beta Histogram")
-lines(density(b),col="red")
-
-###exponen
-xpon<-function(lambda , n){
-  X<-rep(0,n)
-  for(i in 1:n){
-    U<-runif(1)
-    X[i] <- (-1/lambda)*log(1-U)
-  }
-  X
-}
-library(MASS)
-x<- xpon(0.5 , 10000)
-truehist(x)
-y <- seq(0 , 8 , length = 10000)
-dy <- dexp(y , 0.5)
-lines(y , dy)
-
-#### 2##
-x<-c(19,32,28,13,8,12,16,20,14,17,22,18,23)
-mean(x)
-var(x)
-sdraw<-matrix(rpois(5000*13,18:69),nrow=13)
-ncol(sdraw)
-nrow(sdraw)
-ssq<-apply(sdraw,2,var)
-length(ssq)
-truehist(sdraw)
-hist(sdraw, breaks = 100)
-mean<-(sdraw>18.61)
-range<-(sdraw>43.25)
-mean
-range(sdraw)
-mean(sdraw>35)
-poisson.test(sum(sdraw))
-
-
-### 3 mle & moment ##
-##gamma mle
-library(stats)
-sampleData <- rgamma(n = 1000,shape = 2, rate =0.2)
-x_bar  <- mean(sampleData) # alpha/lambda is the mean
-x_bar
-lnSample <- log(sampleData)
-head(lnSample)
-meanlnSample <- mean(lnSample)
-meanlnSample
-f <- function(x){
-   log(x) - digamma(x) - log(x_bar) + meanlnSample
-}
-a <- uniroot(f,lower = 2.0, upper = 2.2)
-a
-alpha_hat <- a$root
-alpha_hat
-lambda_hat <- alpha_hat/x_bar
-lambda_hat
-
-####  Plot risk function
-# Normal Case
-n <- 5
-b <- c(1 , (n - 1)/n , (n - 1)/(n + 1))
-s <- seq(1 , 10 , 0.1)
-risk <- function(b){
-  return(((2*b^2/(n-1))+(b[1]-1)^2)*(s)^2)
-}
-risk.original <- risk(b[1])
-risk.mle <- risk(b[2])
-risk.bayes <- risk(b[3])
-plot(s , risk.original, type = "l")
-lines(s , risk.mle , lty = 2 , col = 'blue')
-lines(s , risk.bayes , lty = 3 , col = 'green')
-#bernoili case
-p<- seq(0, 1 , 0.01)
-n<- c(4, 100, 1000, 4000)
-l<- length(n)
-for(i in 1:l){
-  rm<- p*(1-p)/n[i]
-  a<-sqrt(n[i]/4)
-  rb<-(n[i]*p*(1-p)+ a^2*(1-p)^2)/(a+n[i])^2
-
-}
-plot(p,rm, type="l")
-plot(p, rb, lty=2, col="red")
-
-####  power function
-#normal
-set.seed(10)
-x<-rnorm(25,5,2)
-n<-length(x)
-xbar<-mean(x)
-sigma<-2
-mu<-5
-alpha<-.05
-zcal<-(xbar-mu)/(sigma/sqrt(n))
-zalpha<-qnorm(alpha, lower.tail = FALSE)
-zcal
-zalpha
-theta<-seq(mu-4*sigma/sqrt(n), mu+4*sigma/sqrt(n), .001)
-z<-zalpha+(mu-theta)*(sqrt(n)/sigma)
-power<-pnorm(z, lower.tail = FALSE)
-plot(theta, power)
-segments(5,0.5, 1, lty=2)
-
-#normal ci for pop var
-x<-rnorm(100,0,1)
-mean(x)
-v<-var(x)
-n<-length(x)
-ci<-(n-1)*v/qchisq(c(.975,.025), n-1)
-ci
-v
-#bayseian normal mean
-m<-mean(x)
-low.ci<-m-qnorm(0.975)*m/sqrt(n)
-up.ci<-m+qnorm(0.975)*m/sqrt(n)
-cbind(low.ci,up.ci)
-m
-# for mean classic
-low.ci<-m-qnorm(0.975)*sd(x)/sqrt(n)
-up.ci<-m+qnorm(0.975)*sd(x)/sqrt(n)
-cbind(low.ci,up.ci)
-m
-
-######exponen ci
-x = rexp(50, .5)
-mean(x)
-n<-length(x)
-m<-1/mean(x)
-m
-low.ci<-m*(1-(qnorm(1-(.05/2)))/sqrt(n))
-up.ci<-m*(1+(qnorm(1-(.05/2)))/sqrt(n))
-cbind(low.ci, up.ci)
-m
-
-
-
-
-
-
-
-
-
-
-
-
-
+First Name	Mobile Phone
+???	1755965594
+36min	*132*2#
+Abbas vi	8.80199E+12
+Abs Sir Creative It	1738696914
+Abul	8.80193E+12
+Adib  Jnu Room 13	
+afif	+880 1974-448142
+Afjaz Vi	8.8018E+12
+Al	8.80176E+12
+Alamin	019-331-55642
+Alamin	8.80172E+12
+Alamin Sir	01760-597673
+Ali	1720194217
+Alomgir Vi	1681081820
+Ammu	8.80195E+12
+Anik Student Wari	01877-645291
+anika student	1760306904
+Anis	8.80191E+12
+anis	8.80171E+12
+Anis	8.80173E+12
+anjoli momiit	16327753000
+Apu	8.80192E+12
+Apu	8.80175E+12
+apu robi	+880 1817-546506
+Apu	8.80186E+12
+Apurba	00 91 7450 044 946
+Apurbo	8.80174E+12
+Arafat	+880 1795-096296
+Arif 11stat	8.80199E+12
+Arif Teletalk Jnu Stat 11	+880 1516-782360
+Arif Vai (Mehedei)	01520-104707
+arif vai rudro	8.80181E+12
+Arif	8.80175E+12
+Arman	01955-390023
+Arnob	8.80174E+12
+arun	017-607-46414
+Asad Vi	8.80155E+12
+Asha	1749006555
+asha	1946815279
+Ashik	8.80168E+12
+Ashik Ether Pubg	+880 1740-673951
+Ashik	019-140-44303
+Ashique	8.80178E+12
+Asif	8.80177E+12
+Asif  Du Haija	
+Auli	8.80194E+12
+Auli	016-729-17021
+Awlad Cudry	8.8018E+12
+Babu	8.80194E+12
+Badot	019-155-19358
+Baizid	8.8014E+12
+Baki Vi	8.80171E+12
+Bang	018-304-24326
+Bappi Sykot	+880 1637-196138
+Basar Teletalk	8.80152E+12
+Bk	1676166775
+Boni	017-481-06849
+Bonna Jnu Stat	+880 1689-020568
+Boro	017-328-87441
+Boro	017-518-47378
+Boro	1718060432
+boro mami new	1713545150
+C	017-618-18014
+	
+cestu vi wife	01985-443844
+Cesty	8.80171E+12
+Chairman	1711269119
+Choitonno	018-190-98667
+Chotto	017-464-08292
+Chunnu	+880 1728-977794
+chunnu	17693279000
+chunnu mama new	01769-327900
+codearon	+94 70 269 7084
+	
+Creative It	8.80199E+12
+Customer Care	1234
+Daroyan Mama Lokkibazar	01837-066727
+Dbbl Acc No	1.18105E+11
+Dipto	017-560-56478
+Dj	8.80173E+12
+dr kamal vi bl	01913-979609
+E	8.80132E+12
+Emon	017-646-17697
+Emran Student	8.80163E+12
+Esha	8.8013E+12
+Esha	1303029027
+Esha....	01595-071274
+Eshan Talma Mor	01741-469136
+ethar.....	8.80175E+12
+Faisal	8.80172E+12
+Farid	8.80174E+12
+faruk	1728062523
+faruk. new match	01932-190451
+Farukh	019-666-21416
+Fm Sharif Vi	01711-042424
+frnd	8.80184E+12
+Fupa 1	
+Galib	1912577594
+Gaus Vi	8.80197E+12
+Gopal	017-158-69208
+Gp 1tk	*121*4*1#
+GP 40 MIN 14 TAKA	*121*4001#
+Gp 75 min 24 taka	*121*4002#
+Habbib	018-170-72354
+Halim	8.80177E+12
+hamim	1782817000
+Harun Vai Llm Norail Jnu	01936-043863
+Hemel	8.80177E+12
+Hemel	017-035-46479
+Hira	1716626144
+Hira...11th jnu stat comilla	01716-626144
+Hossain	
+Hostel	8.80194E+12
+Hridoy Jnu 11 economics	
+Hridoy Shampur	01688-932507
+Ibraheem	017-717-42489
+Ibrahim	019-826-35003
+Imran	8.80152E+12
+Iqbal Kabir	8.80175E+12
+Izaz Rajendra Clg Frnd	
+Jannat Bogura	01600-280519
+Jibitos	017-124-28015
+Jisan	8.80178E+12
+Jnu	8.80173E+12
+Jnu	8.80178E+12
+Jnu	1945969409
+Jnu	1720220289
+Jnu	1687646161
+Jnu	8.80171E+12
+Jnu	8.80195E+12
+Jnu	1681329348
+Jnu	1940770499
+Jnu Neon Vai	017-384-49494
+Jnu Niamul	016-892-22995
+Jnu Rakib Vai	8.80193E+12
+	017-190-40035
+	017-035-13687
+	8.80185E+12
+Jnu	017-296-98188
+jnu salehin frnd	8.80168E+12
+Jnu Sawon Stat 10	1773379597
+Jnu Simul Vi	017-370-35202
+Jnu	1686246013
+Jnu	016-730-47983
+jontu mama. arun vi	01764-144933
+Jony	8.80177E+12
+Jony	8.80168E+12
+Jony	8.80171E+12
+Joy Paul Room	8.80175E+12
+Joy	016-862-35474
+joynal Vi Rice	+880 1952-186141
+Juba	017-537-26131
+Juba	1611066287
+juba 2 gp	8.80172E+12
+Juba2	8.80175E+12
+Jubayer	017-198-06185
+Jubayer Utt	8.80192E+12
+JubayrNew	017-747-28134
+Julpha 14 Bio Chem Jnu	01625-261033
+Junait	019-374-19710
+Kairul Room	+880 1921-664883
+Kaka	017-244-93948
+Kaka	8.80174E+12
+Kala	1627883755
+Kamrul	016-760-97935
+Kamrul TalmA Jnu Scology	8.80152E+12
+Kamrul Vi Dmc	1723268954
+Kamrul Vi Fupato Vi	
+Kamrun Jnu Fp Frnd	01995-269767
+Kanchon Unc Brdb	017-201-82221
+kawsar kaka	01748-866204
+Kawser Tongi	8.80177E+12
+Kazi	8.80168E+12
+Khala luxmibazar 2	
+Kobir	017-315-40213
+	
+Kohinir Jnu	1715154842
+Kurban	017-177-51634
+Lalon Vi r&b	1759553382
+Lavlu Vai	8.80168E+12
+Limon	8.8018E+12
+Limon	8.80176E+12
+Limon	019-392-00100
+Liton Vi	
+liton vi brdb	01712-855180
+Liza	018-286-56041
+Liza	8.80168E+12
+Liza	8.8018E+12
+Liza	8.80179E+12
+Lokki	017-126-01256
+Lovely	017-458-07788
+Lutfor Unc	019-117-97257
+M	+880 1717-430973
+Mae	
+Mahabub	8.80173E+12
+mahadi vai(rudro)	8.80193E+12
+Mahfuz 11jnu Stat	01521-331550
+mahia	016-857-12096
+Mahidull	017-175-59919
+Mahmuda	017 9473 5960
+Malake	017-181-71974
+Manik	8.80174E+12
+Masud H	1946936932
+Masud	1954791878
+masud	8.80186E+12
+MD	6.00167E+11
+Megla	8.80177E+12
+Mehedi Hasa Joy 	
+mehedi talma	+880 1913-014128
+Mehedi Vai	1531532331
+Mehedi	1830607500
+Mejo	017-162-21257
+mirpur	1622942813
+Mithu	1676927930
+Mithun Is 10 Tomal	018 8740 9657
+Mithun	1624126271
+Mithun Moyne Room	01732-661889
+mohidul Moin	+880 1741-467207
+Mojid vi sopnochura jnu	1720639743
+Mokibul	8.80162E+12
+Momit	8.80169E+12
+Monojit Airtel	
+monojit teletalk	8.80152E+12
+Mostofa 10 Stat	
+Mota Airtel	8.80164E+12
+Mota Teletalk	+880 1518-633837
+Moulana	017-183-84727
+moumita 11 stat	
+moyine	017-176-95368
+Moyne basar	8.80175E+12
+Mst Mousumi Apu	1674234869
+Munnu	8.80171E+12
+Munsur Vi	01715-696550
+Mursalin	8.80186E+12
+Mursalin Mamato	01768-872940
+Musa	8.80175E+12
+Musarof	8.80175E+12
+My	8.80184E+12
+My Teletalk	1571479392
+Nadim Law 10 Jnu	8.802E+12
+Nadim	8.80188E+12
+Nafess	8.8018E+12
+nafess clg frnd	8.80193E+12
+Nafess	1925930009
+Nafess Notun	1970930009
+Nafess R.clg	
+Nahid	8.80191E+12
+Nahid+tal	017-146-64662
+Nayme Vi Fp Jnu	01737-870976
+nazmul vi 8 butany	
+Nazrul	019-228-02417
+Nazrul	017-189-13680
+Nid	1.99729E+16
+nihsat 	+880 1647-435870
+Nilay	+880 1303-565582
+Niloy Gp	+880 1746-912698
+Nipa...	1726165023
+Nishi	8.80156E+12
+Nisith	018-341-68660
+Niyem asadd vi ctg	+880 1635-213661
+Noman Jnu Frnd Stat	01883-426368
+nousad 11 stat	+880 1914-018540
+Nowsad Jnu 11 Stat	
+Nus P	019 2242 5425
+Odud Kaka Amin Talma	
+Omar	8.80191E+12
+Omar Teletalk Jnu	+880 1515-216276
+Omor	017-223-88106
+Osim	1779342818
+Ovi	8.80178E+12
+P1a	8.80169E+12
+pannu	8.80172E+12
+Parvez	019-366-95193
+Parvez-mango	019-264-66508
+Pia Jnu Stat 11	+880 1730-489358
+Pias	1797371613
+Piya	8.80163E+12
+Probir	017-689-63624
+Prolad Da Jnu Fp	01742-010691
+	
+Rabbi	8.80191E+12
+Rabbi	1912141539
+Rabbi	1927884029
+Rabbi Pk New	01995-391438
+Rahat	016-235-92369
+Rahman	8.80177E+12
+Raihan	8.80173E+12
+raihan vai aliyabad	8.80177E+12
+Raihan	8.80199E+12
+Rajib	1943099548
+Rajibul!	015-530-17317
+Raju	8.80174E+12
+Raju Mama Sagor	01674-281713
+RAKIB	8.80173E+12
+Rana Vai	01927-557180
+Rased	1730790391
+Rasel Stat Teletalk	+880 1521-213041
+Rasel	8.80168E+12
+Ratna	+880 1825-126861
+Ratna	8.80163E+12
+Ratul Fp 12 Jnu	
+razu.mama	01757-802969
+Regan	019-432-78675
+Regan	1920102866
+Regan	8.80176E+12
+Resad	1742348307
+Rifat	8.80167E+12
+Rimon	1965197800
+Rimon	018-336-21968
+Risha	1776972910
+Ritur Ma	+880 1746-873320
+Riya	1984658291
+riya	8.80199E+12
+Riyad Vi Confidence(staff)	018 7494 1115
+Robin	01534-950331
+Robin	8.80163E+12
+Robin	8.80175E+12
+Robiul	8.80183E+12
+Rogi	8.80171E+12
+Rohima	8.80178E+12
+Rokon vi	8.80152E+12
+Rony Dbbl	1929935829
+	
+	
+	
+Rubel	01733-903994
+Rubel	96565943328
+Ruhul	8.80192E+12
+Ruhul	1721932856
+rupa appu..	8.802E+12
+Rupa	8.80176E+12
+Sabbir	1945107843
+Sabbir	8.80178E+12
+Sabbir	8.80182E+12
+Sabbir	1689601962
+sabbir.. talma	8.80163E+12
+Sabbit	1761405485
+Saddam	017-231-22296
+Saddam	8.80173E+12
+Sadin	8.80175E+12
+Sadon 11 Stat	
+Safayet	1875490640
+Sagor	1749301530
+Sagor	017-142-23356
+Sahed	1969270382
+Sahid	8.80175E+12
+Sahin Sir	1710086473
+Sahon	8.80177E+12
+Sahon+match	017-423-55511
+Saiful Jnu 10	
+saiful jnu b.baria	8.80199E+12
+Saiful	1670072854
+Saiful Vi Police	1720539660
+saila	1941932616
+Sajib	019-323-69315
+Sajib	1681202869
+Sajid	8.80175E+12
+Sakib	01712-510530
+Sakil	8.80177E+12
+sakpldia	8.80176E+12
+Saleha	8.80192E+12
+Salehin DM 10 Stat	
+Salman Vai Pool	01673-024212
+Samim	1758525552
+Samim Khata	01772-165862
+Samim	1797151883
+Samim Teletalk  Khata	
+Sanjida	017-796-28319
+Santo	1954066009
+Santo Vai Jnu	8.80163E+12
+sawon jnu stat teletalk	+880 1567-860897
+sawon mirajul gopalgonj	1758647821
+Sawon	01856-163783
+Saykot	019-653-69478
+Saymun	8.80174E+12
+Sejo Mami.(sathi)	01718-066990
+Sha	+880 1731-074713
+Shadot	017-668-44039
+shalam fp jnu	+880 1567-860895
+Sharaph	016-870-24252
+Sharmin Geo 10th Jnu	
+Sharuful	017-607-84492
+Shimu	+880 1888-714536
+shimul jnu ac 11th	+880 1515-616059
+Shohel	8.80155E+12
+Showrabh	01913-266596
+showrabh	
+Shuvo 12 Jnu Stat	
+shuvo Vai Ratna	01681-996098
+Siam Vatija	
+Simon	8.80171E+12
+Simon	8.80161E+12
+sir-yasn	017-150-16421
+Sobuj	8.80176E+12
+Sohan	018-160-58939
+sohan jeee	01744-320509
+Sohel	8.80168E+12
+Sohel Mama Gp New	
+Sohel	8.80175E+12
+Sohel Vi Mess Teletalk	
+sojol talmA	8.80172E+12
+Somrar	8.80197E+12
+Somrat	017-674-96688
+Sonjoy Sykot	+880 1731-124275
+Sorna Modukali	017-787-58815
+Soron Frnd	8.80152E+12
+Statistics Job	2.54772E+11
+Statistics Solver	00 234 805 448 3724
+Subroto	8.80176E+12
+Suja	8.80172E+12
+Sujit	8.80163E+12
+Sujit	017-384-05381
+Sumir	1515644794
+Sumon Nagrkanda Jubayer	
+Suvo Apu	01624-409326
+Suvo	8.80177E+12
+Suza	8.80168E+12
+Sykot	8.80175E+12
+sykot gp new...	8.80172E+12
+Sykot Misra Saifurs	01771-949337
+Sykot	8.80163E+12
+Sykot	8.80174E+12
+T2	8.80168E+12
+Tajib	8.80179E+12
+talma	016-824-47899
+Tamim Vi	1632046603
+Tanim	8.80168E+12
+Tanjima Stat	+880 1756-751057
+Tanvir	8.80186E+12
+Tanzil	017-173-14785
+Tapas 11 Stat	8.80164E+12
+tarek vi teletalk	+880 1568-344039
+Tareq Sir	017-165-97483
+tasnim Moyne Jnu Acc	+880 1612-218533
+Tazibul	1744236578
+Tazibul	017-442-36578
+tisa gp	8.80175E+12
+Titon	019-380-72280
+TITU	018-152-15264
+TITU	018-152-15264
+titu	1876018470
+titu robi...new	1876018470
+Tofayel Airtel	8.80164E+12
+Tofayel....jnu	01719-731443
+Toibe	8.80177E+12
+Toibe Phi Frnd	8.80192E+12
+Tomal	018-386-95989
+Tomal	017-668-38222
+Tonmoy	8.80184E+12
+Tonmoy Vai Pk	019-220-96099
+Touhid Vi 7th Saifurs Acc Comilla	01725-389207
+Trisha	01991-458392
+trisha gp	
+Trisha	8.80181E+12
+Tufayel	8.80152E+12
+Tuhin	8.80172E+12
+Tusar 11 Stat Jnu	8.80163E+12
+Tusar New Teletal	+880 1518-792717
+Tuser Jnu Frnd	8.80177E+12
+Tution	1956314240
+Tutul	8.80177E+12
+Uggol	017-783-90058
+Unus	017-166-58262
+Ussas	8.80174E+12
+Vabi Ati Vi	013 1313 4624
+Varatia Uncl	8.80152E+12
+X. Dhk	016-812-47687
+X11	016-857-12096
+X4	8.80183E+12
+X6	8.80176E+12
+Xfb	017-428-29616
+Xsna	017-354-93593
+Xx	1921519330
+Xxb	8.80177E+12
+Yasin Student Babglabaxar	+880 1400-711326
+Younous Lokkibazar	1916821616
+Zahid	019-625-67079
+Zakir	8.80171E+12
+Zinia	8.80176E+12
+	
+à¦Ÿà¦¿à¦Ÿà§	8.80163E+12
+à¦°à¦¾à¦¬à¦¬à¦¿	8.80188E+12
+à¦°à¦¾à¦¬à¦¿à¦¬	1957167371
+à¦¶à¦¾à¦“à¦¨	1856439159
 
 </pre>
+
 </body>
 </html>
